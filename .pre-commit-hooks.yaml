@@ -2,4 +2,4 @@
   name: Check Odoo module version update
   entry: ./autoversion.py
   language: system
-  types: [files]
+  types: [file]
