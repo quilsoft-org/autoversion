@@ -1,6 +1,6 @@
 [project]
 name = "autoversion"
-version = "1.0.6"
+version = "1.0.7"
 description = "Pre-commit hook to check Odoo module version update when XML or CSV files are modified."
 authors = [
     { name = "Jorge Obiols", email = "jorge.obiols@quilsoft.com" }

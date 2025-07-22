@@ -12,7 +12,7 @@ Pre-commit plugin that checks if, when XML or CSV files are modified in a module
 
 ```yaml
 - repo: https://github.com/your_user/autoversion
-  rev: v1.0.6  # Use the appropriate version/tag
+  rev: v1.0.7  # Use the appropriate version/tag
   hooks:
     - id: autoversion
 ```
