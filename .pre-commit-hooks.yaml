@@ -1,7 +1,5 @@
 - id: autoversion
   name: Check Odoo module version update
-  entry: python3 autoversion.py
+  entry: ./autoversion.py
   language: system
-  types: [python, xml, csv]
-  description: >-
-    If you modify XML or CSV files in a module, checks that the version in __manifest__.py has also been updated. 
+  types: [files]

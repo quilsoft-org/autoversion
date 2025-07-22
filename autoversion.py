@@ -35,7 +35,12 @@ def get_module_version(manifest_path: Path):
 
 
 def main():
+    print("Checking staged files for Odoo module version updates...")
+
     files = get_staged_files()
+
+    print(f"Found {len(files)} staged files.")
+    
     xml_modules = set()
     manifest_versions = {}
 
