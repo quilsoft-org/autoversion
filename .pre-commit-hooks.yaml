@@ -1,5 +1,5 @@
 - id: autoversion
   name: Check Odoo module version update
-  entry: python3 autoversion.py
+  entry: autoversion
   language: system
   types: [file]
