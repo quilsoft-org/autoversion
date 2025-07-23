@@ -1,5 +1,6 @@
 - id: autoversion
   name: Check Odoo module version update
   entry: autoversion
-  language: system
-  types: [file]
+  language: python
+  language_version: python3.10
+  types: [py,xml,csv]
