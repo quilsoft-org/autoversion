@@ -2,4 +2,5 @@
   name: Check Odoo module version update
   entry: autoversion
   language: python
+  pass_filenames: false
   files: '(__manifest__\.py|\.xml|\.csv)$'

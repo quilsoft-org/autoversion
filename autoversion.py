@@ -2,80 +2,89 @@
 import re
 import sys
 from pathlib import Path
+from subprocess import check_output, CalledProcessError
 
-MODULE_RE = re.compile(r".*/([^/]+)/.*\.xml$")
 MANIFEST_RE = re.compile(r"['\"]version['\"]\s*:\s*['\"](.+?)['\"]")
 
 
 def get_staged_files():
-    """Get the list of staged files (cached)"""
-    from subprocess import check_output
-
+    """Get the list of staged files (cached)."""
     out = check_output(["git", "diff", "--cached", "--name-only"]).decode()
-    return [f for f in out.splitlines() if f.strip()]
+    return [Path(f) for f in out.splitlines() if f.strip()]
 
 
 def extract_module_name(filepath: Path):
+    """Detect module name from path (addons/modulename/...)."""
     try:
         parts = filepath.parts
-        idx = parts.index("addons") + 1  # typical Odoo layout
+        idx = parts.index("addons") + 1
         return parts[idx]
     except ValueError:
-        # fallback: assume layout: ./modulename/...
         return filepath.parts[0]
 
 
-def get_module_version(manifest_path: Path):
+def get_version_from_file(path: Path):
     try:
-        text = manifest_path.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8")
         match = MANIFEST_RE.search(text)
         return match.group(1) if match else None
     except Exception:
         return None
 
 
+def get_version_from_git(path: Path):
+    """Get version of manifest from HEAD (before staged changes)."""
+    try:
+        out = check_output(["git", "show", f"HEAD:{path}"]).decode()
+        match = MANIFEST_RE.search(out)
+        return match.group(1) if match else None
+    except CalledProcessError:
+        return None  # file may not exist in HEAD (new module)
+
+
 def main():
-    print("Checking staged files for Odoo module version updates...")
+    print("🔍 Checking staged files for Odoo module version updates...")
 
     files = get_staged_files()
-
     print(f"Found {len(files)} staged files.")
-    
-    xml_modules = set()
-    manifest_versions = {}
 
-    for file in files:
-        p = Path(file)
-        if not p.exists():
-            continue
+    # Detect modules with XML/CSV changes
+    touched_modules = {
+        extract_module_name(f)
+        for f in files
+        if f.suffix in [".xml", ".csv"]
+    }
 
-        if p.name == "__manifest__.py":
-            module = extract_module_name(p)
-            manifest_versions[module] = get_module_version(p)
+    if not touched_modules:
+        print("✅ No XML/CSV changes found. Nothing to check.")
+        return 0
 
-        elif p.suffix in [".xml", ".csv"]:
-            module = extract_module_name(p)
-            xml_modules.add(module)
+    print(f"Modules with XML/CSV changes: {', '.join(touched_modules)}")
 
     offending = []
-    for module in xml_modules:
+    for module in touched_modules:
         manifest_path = Path(module) / "__manifest__.py"
-        old_version = (
-            get_module_version(manifest_path) if manifest_path.exists() else None
-        )
-        staged_manifest = [f for f in files if f.endswith(f"{module}/__manifest__.py")]
-        if not staged_manifest:
+        if not manifest_path.exists():
+            offending.append(module)
+            continue
+
+        old_version = get_version_from_git(manifest_path)
+        new_version = get_version_from_file(manifest_path)
+
+        if old_version == new_version:
             offending.append(module)
 
     if offending:
-        print("❌ These modules have changes in XML or CSV files but did not update the version:")
+        print("\n❌ These modules changed XML/CSV but did not bump version:")
         for m in offending:
             print(f"  - {m}")
         print(
-            "\n⚠️  Remember to bump the version in __manifest__.py so Odoo.sh will reinstall the module."
+            "\n⚠️  Remember to bump the version in __manifest__.py "
+            "so Odoo.sh will reinstall the module."
         )
         return 1
 
+    print("✅ All modules with XML/CSV changes have bumped their version.")
     return 0
 
 
