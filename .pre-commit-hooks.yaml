@@ -1,6 +1,6 @@
 - id: autoversion
-  name: Check Odoo module version update
+  name: Check Odoo module version bump
   entry: autoversion
   language: python
   pass_filenames: false
-  files: '(__manifest__\.py|\.xml|\.csv)$'
+  files: '^addons/'
